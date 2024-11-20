@@ -1,50 +1,87 @@
-# React + TypeScript + Vite
+# PodPrep AI - Intelligent Podcast Guest Research Tool
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PodPrep AI is a modern web application designed to streamline the podcast guest research and discovery process. Using advanced AI algorithms, it helps podcast hosts find and evaluate potential guests based on relevance, reach, and engagement metrics.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Guest Research
+- **Comprehensive Search Form**
+  - Topic-based guest matching
+  - Expertise filtering
+  - Keyword search
+  - Audience size filtering
+  - Social media integration (LinkedIn & Twitter)
 
-## Expanding the ESLint configuration
+### Guest Suggestions
+- **Intelligent Scoring System**
+  - Relevance scoring
+  - Reach analysis
+  - Engagement metrics
+  - Topic match evaluation
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+### Guest Management
+- **Save & Organize**
+  - Save potential guests
+  - View detailed guest profiles
+  - Track past podcast appearances
+  - Access social media links
 
-- Configure the top-level `parserOptions` property like this:
+## 🛠 Tech Stack
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- **Frontend**
+  - React with TypeScript
+  - Tailwind CSS for styling
+  - Framer Motion for animations
+  - React Router for navigation
+  - React Hook Form for form management
+
+- **Design**
+  - Modern, responsive UI
+  - Clean, intuitive interface
+  - Smooth animations
+  - Mobile-friendly layout
+
+## 🔧 Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Mac0nia/podprep-ai.git
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+2. Install dependencies:
+```bash
+cd podprep-ai
+npm install
 ```
+
+3. Start the development server:
+```bash
+npm start
+```
+
+## 🎯 Upcoming Features
+
+- AI-powered guest matching algorithm
+- Detailed guest profile analytics
+- Integration with podcast production workflow
+- Advanced filtering and sorting options
+- Guest outreach templates
+- Calendar integration for scheduling
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 👥 Authors
+
+- [@Mac0nia](https://github.com/Mac0nia)
+
+## 🙏 Acknowledgments
+
+- Built with React and TypeScript
+- Styled with Tailwind CSS
+- Animations powered by Framer Motion
