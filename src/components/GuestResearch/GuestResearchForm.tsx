@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { fetchGuestSuggestions } from '../../services/api';
 
 interface GuestResearchFormData {
   linkedinUrl?: string;
@@ -11,16 +12,24 @@ interface GuestResearchFormData {
   guestExpertise: string;
 }
 
-export default function GuestResearchForm({ onSubmit }: { onSubmit: (data: GuestResearchFormData) => void }) {
+interface GuestResearchFormProps {
+  onSubmit: (data: GuestResearchFormData) => void;
+}
+
+export default function GuestResearchForm({ onSubmit }: GuestResearchFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [suggestions, setSuggestions] = useState([])
   const { register, handleSubmit, formState: { errors } } = useForm<GuestResearchFormData>()
 
   const onSubmitForm = async (data: GuestResearchFormData) => {
-    setIsLoading(true)
     try {
-      await onSubmit(data)
+      setIsLoading(true);
+      const response = await fetchGuestSuggestions(data);
+      setSuggestions(response.suggestions);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -165,6 +174,7 @@ export default function GuestResearchForm({ onSubmit }: { onSubmit: (data: Guest
           )}
         </button>
       </div>
+      {isLoading && <div className="spinner">Loading...</div>}
     </form>
   )
 }
