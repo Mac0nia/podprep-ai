@@ -63,7 +63,11 @@ export class CelebrityFilter {
         'famous', 'renowned', 'notable', 'prominent', 'distinguished',
         'philanthropist', 'investor', 'public figure', 'media personality',
         'tech executive', 'silicon valley', 'startup founder',
-        'award-winning', 'bestselling', 'acclaimed'
+        'award-winning', 'bestselling', 'acclaimed',
+        'social media entrepreneur', 'digital marketing guru', 'business guru',
+        'keynote speaker', 'motivational speaker', 'thought leader',
+        'business influencer', 'marketing influencer', 'social media expert',
+        'VaynerMedia', 'Wine Library', 'serial entrepreneur'
       ];
 
       const hasKeywords = celebrityKeywords.some(keyword => 
@@ -73,7 +77,10 @@ export class CelebrityFilter {
       // Check for specific achievements
       const achievementKeywords = [
         'forbes', 'time 100', 'fortune 500', 'grammy', 'oscar', 'emmy',
-        'nobel', 'pulitzer', 'world record', 'hall of fame'
+        'nobel', 'pulitzer', 'world record', 'hall of fame',
+        'bestselling author', 'ted talk', 'tedx', 'keynote',
+        'inc 500', 'shark tank', 'dragons den', 'y combinator',
+        'web summit', 'sxsw', 'social media week'
       ];
 
       const hasAchievements = achievementKeywords.some(keyword => 
@@ -101,7 +108,7 @@ export class CelebrityFilter {
           params: {
             key: import.meta.env.VITE_GOOGLE_API_KEY,
             cx: import.meta.env.VITE_GOOGLE_CSE_ID,
-            q: `"${name}" (site:twitter.com OR site:x.com OR site:instagram.com OR site:linkedin.com)`,
+            q: `"${name}" (site:twitter.com OR site:x.com OR site:instagram.com OR site:linkedin.com OR site:youtube.com OR site:tiktok.com)`,
             num: 10,
           },
         }
@@ -109,7 +116,7 @@ export class CelebrityFilter {
 
       for (const item of response.data.items || []) {
         // Check for social media follower counts in snippets
-        const followerMatch = item.snippet.match(/(\d+(?:[.,]\d+)*[KMB]?)\s*(?:Followers|Following|followers|connections)/i);
+        const followerMatch = item.snippet.match(/(\d+(?:[.,]\d+)*[KMB]?)\s*(?:Followers|Following|followers|connections|subscribers)/i);
         if (followerMatch) {
           let followers = followerMatch[1].replace(/,/g, '');
           let count = 0;
@@ -125,7 +132,20 @@ export class CelebrityFilter {
             count = parseFloat(followers);
           }
 
-          if (count > 2000000) {
+          // Lower the threshold for business influencers and entrepreneurs
+          const businessInfluencerKeywords = [
+            'entrepreneur', 'founder', 'ceo', 'investor', 'speaker',
+            'author', 'expert', 'guru', 'consultant', 'advisor'
+          ];
+          
+          const isBusinessInfluencer = businessInfluencerKeywords.some(keyword => 
+            item.snippet.toLowerCase().includes(keyword.toLowerCase())
+          );
+
+          // Use a lower threshold for business influencers
+          const threshold = isBusinessInfluencer ? 500000 : 2000000;
+          
+          if (count > threshold) {
             let platform = 'Social Media';
             if (item.link.includes('twitter.com') || item.link.includes('x.com')) {
               platform = 'Twitter/X';
@@ -133,6 +153,10 @@ export class CelebrityFilter {
               platform = 'Instagram';
             } else if (item.link.includes('linkedin.com')) {
               platform = 'LinkedIn';
+            } else if (item.link.includes('youtube.com')) {
+              platform = 'YouTube';
+            } else if (item.link.includes('tiktok.com')) {
+              platform = 'TikTok';
             }
 
             return {
