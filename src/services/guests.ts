@@ -1,4 +1,5 @@
 import { GuestSearchParams, GuestSuggestion } from '../types/guest';
+import { URLValidator } from './validation/urlValidator';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -42,6 +43,15 @@ export async function searchGuests(params: GuestSearchParams): Promise<GuestSugg
   
   if (!apiKey) {
     throw new APIError('GROQ API key is not configured');
+  }
+
+  // Validate LinkedIn URL if provided
+  if (params.linkedinUrl) {
+    const validation = await URLValidator.validateAndNormalizeURL(params.linkedinUrl);
+    if (!validation.isValid) {
+      throw new APIError(`Invalid LinkedIn URL: ${validation.error}`);
+    }
+    params.linkedinUrl = validation.normalizedURL;
   }
 
   try {
@@ -108,7 +118,25 @@ export async function searchGuests(params: GuestSearchParams): Promise<GuestSugg
       throw new APIError('Invalid response from GROQ API');
     }
 
-    return parseAIResponse(data.choices[0].message.content);
+    const responseText = data.choices[0].message.content;
+    const suggestions = parseAIResponse(responseText);
+
+    // Validate and normalize social media URLs in the suggestions
+    const validatedSuggestions = await Promise.all(
+      suggestions.map(async (suggestion) => {
+        if (suggestion.linkedinUrl) {
+          const validation = await URLValidator.validateAndNormalizeURL(suggestion.linkedinUrl);
+          if (validation.isValid && validation.normalizedURL) {
+            suggestion.linkedinUrl = validation.normalizedURL;
+          } else {
+            suggestion.linkedinUrl = undefined;
+          }
+        }
+        return suggestion;
+      })
+    );
+
+    return validatedSuggestions;
   } catch (error) {
     if (error instanceof APIError) {
       throw error;

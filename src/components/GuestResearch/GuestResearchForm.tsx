@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { GuestSearchParams } from '../../types/guest';
+import { URLValidator } from '../../services/validation/urlValidator';
 
 interface GuestResearchFormProps {
   onSubmit: (data: GuestSearchParams) => void;
@@ -9,11 +10,25 @@ interface GuestResearchFormProps {
 
 export default function GuestResearchForm({ onSubmit }: GuestResearchFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm<GuestSearchParams>();
+  const { register, handleSubmit, formState: { errors }, setError } = useForm<GuestSearchParams>();
 
   const onSubmitForm = async (data: GuestSearchParams) => {
     setIsLoading(true);
     try {
+      // Validate LinkedIn URL if provided
+      if (data.linkedinUrl) {
+        const validation = await URLValidator.validateAndNormalizeURL(data.linkedinUrl);
+        if (!validation.isValid) {
+          setError('linkedinUrl', { 
+            type: 'manual',
+            message: validation.error
+          });
+          setIsLoading(false);
+          return;
+        }
+        data.linkedinUrl = validation.normalizedURL;
+      }
+
       await onSubmit(data);
     } finally {
       setIsLoading(false);
@@ -77,12 +92,14 @@ export default function GuestResearchForm({ onSubmit }: GuestResearchFormProps) 
             type="url"
             id="linkedinUrl"
             {...register('linkedinUrl', {
-              pattern: {
-                value: /^https:\/\/[w{3}.]?linkedin.com\/.*$/,
-                message: 'Please enter a valid LinkedIn URL'
+              validate: async (value) => {
+                if (!value) return true;
+                const validation = await URLValidator.validateAndNormalizeURL(value);
+                return validation.isValid || validation.error;
               }
             })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-gray-900 bg-white"
+            placeholder="https://linkedin.com/in/username"
           />
           {errors.linkedinUrl && <p className="mt-2 text-sm text-red-600">{errors.linkedinUrl.message}</p>}
         </div>
