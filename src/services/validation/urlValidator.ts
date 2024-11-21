@@ -1,12 +1,12 @@
 import axios from 'axios';
 
 export class URLValidator {
-  private static readonly LINKEDIN_URL_REGEX = /^https:\/\/(?:www\.)?linkedin\.com\/(?:in|company)\/[\w-]+\/?$/;
+  private static readonly LINKEDIN_URL_REGEX = /^https:\/\/(?:www\.|[a-z]{2}\.)?linkedin\.com\/(?:(?:in|pub|company|profile|mwlite\/in)\/)?(?:[-\w%.]+)\/?(?:\?.*)?$/i;
   private static readonly TWITTER_URL_REGEX = /^https:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[\w-]+\/?$/;
   private static readonly INSTAGRAM_URL_REGEX = /^https:\/\/(?:www\.)?instagram\.com\/[\w.-]+\/?$/;
 
   private static readonly PLATFORM_DOMAINS = {
-    linkedin: ['linkedin.com'],
+    linkedin: ['linkedin.com', 'www.linkedin.com', 'uk.linkedin.com', 'de.linkedin.com', 'fr.linkedin.com', 'it.linkedin.com', 'es.linkedin.com'],
     twitter: ['twitter.com', 'x.com'],
     instagram: ['instagram.com']
   };
@@ -57,7 +57,26 @@ export class URLValidator {
   static normalizeLinkedInURL(url: string): string {
     try {
       const urlObj = new URL(url);
-      const path = urlObj.pathname.replace(/^\/+|\/+$/g, ''); // Remove leading/trailing slashes
+      
+      // Extract the profile identifier, removing any query parameters
+      let path = urlObj.pathname.replace(/^\/+|\/+$/g, ''); // Remove leading/trailing slashes
+      
+      // Handle different LinkedIn URL formats
+      if (path.startsWith('pub/')) {
+        path = 'in/' + path.substring(4);
+      } else if (path.startsWith('profile/')) {
+        path = 'in/' + path.substring(8);
+      } else if (path.startsWith('mwlite/in/')) {
+        path = 'in/' + path.substring(9);
+      } else if (!path.startsWith('in/') && !path.startsWith('company/')) {
+        path = 'in/' + path;
+      }
+      
+      // Ensure the path starts with either 'in/' or 'company/'
+      if (!path.startsWith('in/') && !path.startsWith('company/')) {
+        path = 'in/' + path;
+      }
+      
       return `https://linkedin.com/${path}`;
     } catch (e) {
       return url;

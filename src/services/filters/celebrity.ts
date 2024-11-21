@@ -14,21 +14,10 @@ interface WikipediaResponse {
 
 export class CelebrityFilter {
   private rateLimiter: RateLimiter;
-  private cache: Map<string, {
-    isCelebrity: boolean;
-    reason?: string;
-    details?: {
-      platform?: string;
-      followers?: number;
-      category?: string;
-    };
-  }>;
+  private cache: Map<string, boolean>;
 
   // Initialize well-known figures from the generated list
-  private readonly WELL_KNOWN_FIGURES: Map<string, {
-    category: string;
-    reason: string;
-  }>;
+  private readonly WELL_KNOWN_FIGURES: Map<string, boolean>;
 
   constructor() {
     this.rateLimiter = new RateLimiter();
@@ -38,18 +27,12 @@ export class CelebrityFilter {
     this.WELL_KNOWN_FIGURES = new Map(
       wellKnownFigures.map(figure => [
         figure.name.toLowerCase(),
-        {
-          category: figure.category,
-          reason: figure.reason
-        }
+        true
       ])
     );
   }
 
-  private async checkWikipedia(name: string): Promise<{
-    isCelebrity: boolean;
-    reason?: string;
-  }> {
+  private async checkWikipedia(name: string): Promise<boolean> {
     try {
       await this.rateLimiter.checkLimit('wikipedia');
       const response = await axios.get<WikipediaResponse>(
@@ -66,27 +49,20 @@ export class CelebrityFilter {
       );
 
       if (!response.data.query?.search?.length) {
-        return { isCelebrity: false };
+        return false;
       }
 
       const article = response.data.query.search[0];
       
       // Check for specific keywords that indicate celebrity status
       const celebrityKeywords = [
-        // Business and Tech
         'billionaire', 'entrepreneur', 'ceo', 'founder', 'executive',
-        // Entertainment
         'actor', 'actress', 'musician', 'singer', 'celebrity', 'star',
         'producer', 'director', 'artist', 'performer',
-        // Social Media
         'influencer', 'youtuber', 'streamer', 'content creator',
-        // General Fame
         'famous', 'renowned', 'notable', 'prominent', 'distinguished',
-        // Specific Roles
         'philanthropist', 'investor', 'public figure', 'media personality',
-        // Tech Specific
         'tech executive', 'silicon valley', 'startup founder',
-        // Achievement Indicators
         'award-winning', 'bestselling', 'acclaimed'
       ];
 
@@ -94,7 +70,7 @@ export class CelebrityFilter {
         article.snippet.toLowerCase().includes(keyword.toLowerCase())
       );
 
-      // Check for specific achievements or indicators
+      // Check for specific achievements
       const achievementKeywords = [
         'forbes', 'time 100', 'fortune 500', 'grammy', 'oscar', 'emmy',
         'nobel', 'pulitzer', 'world record', 'hall of fame'
@@ -104,18 +80,10 @@ export class CelebrityFilter {
         article.snippet.toLowerCase().includes(keyword.toLowerCase())
       );
 
-      const isCelebrity = (article.wordcount > 2000 && hasKeywords) || hasAchievements;
-      return {
-        isCelebrity,
-        reason: isCelebrity 
-          ? hasAchievements 
-            ? 'Notable figure with significant achievements'
-            : 'Has substantial Wikipedia presence with notable status'
-          : undefined
-      };
+      return (article.wordcount > 2000 && hasKeywords) || hasAchievements;
     } catch (error) {
       console.warn('Wikipedia API error:', error);
-      return { isCelebrity: false };
+      return false;
     }
   }
 
@@ -184,10 +152,7 @@ export class CelebrityFilter {
     }
   }
 
-  private async checkNewsPresence(name: string): Promise<{
-    isCelebrity: boolean;
-    reason?: string;
-  }> {
+  private async checkNewsPresence(name: string): Promise<boolean> {
     try {
       await this.rateLimiter.checkLimit('google');
       const response = await axios.get(
@@ -197,7 +162,7 @@ export class CelebrityFilter {
             key: import.meta.env.VITE_GOOGLE_API_KEY,
             cx: import.meta.env.VITE_GOOGLE_CSE_ID,
             q: `"${name}"`,
-            dateRestrict: 'y1', // Last year
+            dateRestrict: 'y1',
             sort: 'date',
           },
         }
@@ -205,18 +170,13 @@ export class CelebrityFilter {
 
       const totalResults = parseInt(response.data.searchInformation.totalResults);
       
-      // Check if there are many high-quality news sources
       const qualityNewsSources = [
-        // Tech News
         'techcrunch.com', 'wired.com', 'theverge.com', 'cnet.com',
         'venturebeat.com', 'arstechnica.com',
-        // Business News
         'forbes.com', 'bloomberg.com', 'reuters.com', 'wsj.com',
         'ft.com', 'cnbc.com', 'businessinsider.com',
-        // General News
         'nytimes.com', 'washingtonpost.com', 'theguardian.com',
         'bbc.com', 'cnn.com', 'apnews.com', 'reuters.com',
-        // Industry Specific
         'variety.com', 'hollywoodreporter.com', 'deadline.com',
         'billboard.com', 'rollingstone.com'
       ];
@@ -225,7 +185,6 @@ export class CelebrityFilter {
         (item: any) => qualityNewsSources.some(domain => item.link.includes(domain))
       ).length;
 
-      // Check for recent major coverage
       const recentMajorCoverage = (response.data.items || []).some((item: any) => {
         const isQualitySource = qualityNewsSources.some(domain => item.link.includes(domain));
         const hasHeadlineKeywords = [
@@ -235,35 +194,14 @@ export class CelebrityFilter {
         return isQualitySource && hasHeadlineKeywords;
       });
 
-      const isCelebrity = totalResults > 1000 || qualityNewsCount >= 3 || recentMajorCoverage;
-      
-      let reason;
-      if (isCelebrity) {
-        if (totalResults > 1000) {
-          reason = 'Has extensive media coverage';
-        } else if (qualityNewsCount >= 3) {
-          reason = 'Featured in multiple major news outlets';
-        } else {
-          reason = 'Has recent significant media coverage';
-        }
-      }
-
-      return { isCelebrity, reason };
+      return totalResults > 1000 || qualityNewsCount >= 3 || recentMajorCoverage;
     } catch (error) {
       console.warn('Google News API error:', error);
-      return { isCelebrity: false };
+      return false;
     }
   }
 
-  async isCelebrity(name: string): Promise<{
-    isCelebrity: boolean;
-    reason?: string;
-    details?: {
-      platform?: string;
-      followers?: number;
-      category?: string;
-    };
-  }> {
+  async isCelebrity(name: string): Promise<boolean> {
     try {
       const normalizedName = name.toLowerCase().trim();
 
@@ -275,15 +213,8 @@ export class CelebrityFilter {
       // Check well-known figures list first
       const wellKnownFigure = this.WELL_KNOWN_FIGURES.get(normalizedName);
       if (wellKnownFigure) {
-        const result = {
-          isCelebrity: true,
-          reason: wellKnownFigure.reason,
-          details: {
-            category: wellKnownFigure.category
-          }
-        };
-        this.cache.set(normalizedName, result);
-        return result;
+        this.cache.set(normalizedName, wellKnownFigure);
+        return wellKnownFigure;
       }
 
       // Add timeout to prevent hanging
@@ -301,38 +232,25 @@ export class CelebrityFilter {
         checkPromise,
         timeout
       ]) as [
-        { isCelebrity: boolean; reason?: string },
+        boolean,
         { isInfluencer: boolean; followerCount?: number; platform?: string },
-        { isCelebrity: boolean; reason?: string }
+        boolean
       ];
 
       // Immediately exclude if over 2M followers
       if (socialInfo.isInfluencer) {
-        const result = {
-          isCelebrity: true,
-          reason: `Has over 2M followers on ${socialInfo.platform}`,
-          details: {
-            platform: socialInfo.platform,
-            followers: socialInfo.followerCount
-          }
-        };
-        this.cache.set(normalizedName, result);
-        return result;
+        this.cache.set(normalizedName, true);
+        return true;
       }
 
       // More stringent celebrity check - require both Wikipedia and news presence
-      const isCeleb = wikiInfo.isCelebrity && newsInfo.isCelebrity;
-      const result = {
-        isCelebrity: isCeleb,
-        reason: isCeleb ? `${wikiInfo.reason} and ${newsInfo.reason}` : undefined
-      };
-
-      this.cache.set(normalizedName, result);
-      return result;
+      const isCeleb = wikiInfo && newsInfo;
+      this.cache.set(normalizedName, isCeleb);
+      return isCeleb;
     } catch (error) {
       console.warn('Celebrity check error:', error);
       // Default to not a celebrity on error
-      return { isCelebrity: false };
+      return false;
     }
   }
 
@@ -341,26 +259,10 @@ export class CelebrityFilter {
     onProgress?: (filtered: number, total: number) => void
   ): Promise<{
     filtered: T[];
-    excluded: Array<{
-      guest: T;
-      reason: string;
-      details?: {
-        platform?: string;
-        followers?: number;
-        category?: string;
-      };
-    }>;
+    excluded: T[];
   }> {
     const filtered: T[] = [];
-    const excluded: Array<{
-      guest: T;
-      reason: string;
-      details?: {
-        platform?: string;
-        followers?: number;
-        category?: string;
-      };
-    }> = [];
+    const excluded: T[] = [];
     let processed = 0;
 
     // Process in smaller batches to prevent overwhelming the API
@@ -371,11 +273,11 @@ export class CelebrityFilter {
       await Promise.all(
         batch.map(async (guest) => {
           try {
-            const { isCelebrity, reason, details } = await this.isCelebrity(guest.name);
+            const isCelebrity = await this.isCelebrity(guest.name);
             if (!isCelebrity) {
               filtered.push(guest);
-            } else if (reason) {
-              excluded.push({ guest, reason, details });
+            } else {
+              excluded.push(guest);
             }
             processed++;
             onProgress?.(processed, guests.length);

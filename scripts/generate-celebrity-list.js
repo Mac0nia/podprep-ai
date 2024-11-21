@@ -46,24 +46,13 @@ async function generateWellKnownFigures() {
               role: 'user',
               content: `Generate a list of 20-30 well-known figures in the category: ${category}.
               For tech leaders, focus on founders, CEOs, and influential figures in major tech companies.
-              For each person, provide:
-              1. Their full name (commonly known name)
-              2. A brief reason why they should be filtered (e.g., "CEO of Meta, too high-profile")
-              
-              Return the data in this JSON format:
-              [
-                {
-                  "name": "Person Name",
-                  "category": "${category}",
-                  "reason": "Brief reason"
-                }
-              ]
-              
-              Ensure all names are accurate and these are genuinely high-profile individuals who would overshadow a podcast.`
+              For each person, provide their full name (commonly known name) as a simple list.
+              Example format:
+              ["Mark Zuckerberg", "Elon Musk", "Tim Cook"]`
             }
           ],
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: 1000,
           top_p: 1,
           stream: false
         },
@@ -76,8 +65,7 @@ async function generateWellKnownFigures() {
       );
 
       const figures = JSON.parse(response.data.choices[0].message.content);
-      console.log(`Found ${figures.length} figures for category: ${category}`);
-      allFigures.push(...figures);
+      allFigures.push(...figures.map(name => ({ name })));
 
       // Add a delay between requests
       await new Promise(resolve => setTimeout(resolve, 1000));
