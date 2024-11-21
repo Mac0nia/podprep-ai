@@ -40,15 +40,23 @@ async function generateWellKnownFigures() {
           messages: [
             {
               role: 'system',
-              content: `You are a knowledgeable assistant helping to identify well-known public figures that should be filtered from podcast guest suggestions. Focus on currently active and highly visible individuals.`
+              content: `You are a knowledgeable assistant helping to identify well-known public figures that should be filtered from podcast guest suggestions. Focus on currently active and extremely high-profile individuals who would overshadow any podcast they appear on.
+              
+              Important guidelines:
+              1. Only include the most prominent, globally recognized figures
+              2. Focus on Fortune 500 CEOs, world-famous entrepreneurs, and household names
+              3. DO NOT include social media personalities or influencer-entrepreneurs like Gary Vaynerchuk
+              4. DO NOT include mid-tier tech executives or regional business leaders`
             },
             {
               role: 'user',
-              content: `Generate a list of 20-30 well-known figures in the category: ${category}.
-              For tech leaders, focus on founders, CEOs, and influential figures in major tech companies.
+              content: `Generate a list of 20-30 extremely high-profile figures in the category: ${category}.
+              For tech leaders, focus on founders and CEOs of major tech companies (Fortune 500, FAANG, etc).
+              Only include individuals who are instantly recognizable to the general public.
+              
               For each person, provide their full name (commonly known name) as a simple list.
               Example format:
-              ["Mark Zuckerberg", "Elon Musk", "Tim Cook"]`
+              ["Mark Zuckerberg", "Elon Musk", "Tim Cook", "Satya Nadella"]`
             }
           ],
           temperature: 0.7,
