@@ -18,6 +18,20 @@ export class CelebrityFilter {
 
   // Initialize well-known figures from the generated list
   private readonly WELL_KNOWN_FIGURES: Map<string, boolean>;
+  private readonly MAJOR_COMPANIES = [
+    'facebook', 'meta', 'google', 'alphabet', 'amazon', 'apple', 'microsoft',
+    'tesla', 'twitter', 'x corp', 'paypal', 'uber', 'lyft', 'airbnb', 'slack',
+    'salesforce', 'oracle', 'ibm', 'intel', 'netflix', 'adobe', 'spotify',
+    'snap', 'tiktok', 'bytedance', 'linkedin', 'pinterest', 'reddit', 'stripe'
+  ];
+
+  private normalizeString(str: string): string {
+    return str
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]/g, '') // Remove all non-alphanumeric characters
+      .replace(/\s+/g, '');      // Remove all whitespace
+  }
 
   constructor() {
     this.rateLimiter = new RateLimiter();
@@ -26,9 +40,14 @@ export class CelebrityFilter {
     // Create a map of normalized names to their details
     this.WELL_KNOWN_FIGURES = new Map(
       wellKnownFigures.map(figure => [
-        figure.name.toLowerCase(),
+        this.normalizeString(figure.name),
         true
       ])
+    );
+
+    // Debug log the normalized names
+    console.log('[DEBUG] Initialized well-known figures:', 
+      Array.from(this.WELL_KNOWN_FIGURES.keys())
     );
   }
 
@@ -54,6 +73,19 @@ export class CelebrityFilter {
 
       const article = response.data.query.search[0];
       
+      // Check for major company executives
+      const isMajorCompanyExec = this.MAJOR_COMPANIES.some(company => 
+        article.snippet.toLowerCase().includes(company.toLowerCase()) &&
+        (article.snippet.toLowerCase().includes('ceo') || 
+         article.snippet.toLowerCase().includes('chief') ||
+         article.snippet.toLowerCase().includes('founder') ||
+         article.snippet.toLowerCase().includes('president'))
+      );
+
+      if (isMajorCompanyExec) {
+        return true;
+      }
+
       // Check for specific keywords that indicate celebrity status
       const celebrityKeywords = [
         'billionaire', 'entrepreneur', 'ceo', 'founder', 'executive',
@@ -227,18 +259,47 @@ export class CelebrityFilter {
 
   async isCelebrity(name: string): Promise<boolean> {
     try {
-      const normalizedName = name.toLowerCase().trim();
-
+      const normalizedName = this.normalizeString(name);
+      
+      console.log(`[DEBUG] Checking celebrity status for: ${name} (normalized: ${normalizedName})`);
+      
       // Check cache first
       if (this.cache.has(normalizedName)) {
+        console.log(`[DEBUG] Cache hit for ${name}: ${this.cache.get(normalizedName)}`);
         return this.cache.get(normalizedName)!;
       }
 
       // Check well-known figures list first
-      const wellKnownFigure = this.WELL_KNOWN_FIGURES.get(normalizedName);
-      if (wellKnownFigure) {
-        this.cache.set(normalizedName, wellKnownFigure);
-        return wellKnownFigure;
+      if (this.WELL_KNOWN_FIGURES.has(normalizedName)) {
+        console.log(`[DEBUG] Found in well-known figures: ${name}`);
+        this.cache.set(normalizedName, true);
+        return true;
+      }
+
+      // Also check partial matches for well-known figures
+      const isWellKnown = Array.from(this.WELL_KNOWN_FIGURES.keys()).some(
+        knownName => normalizedName.includes(knownName) || knownName.includes(normalizedName)
+      );
+
+      if (isWellKnown) {
+        console.log(`[DEBUG] Found partial match in well-known figures: ${name}`);
+        this.cache.set(normalizedName, true);
+        return true;
+      }
+
+      // Check if they're associated with any major companies
+      const companyMatch = this.MAJOR_COMPANIES.some(company => 
+        normalizedName.includes(this.normalizeString(company))
+      );
+
+      if (companyMatch) {
+        console.log(`[DEBUG] Found company association for: ${name}`);
+        const wikiResult = await this.checkWikipedia(name);
+        if (wikiResult) {
+          console.log(`[DEBUG] Company association confirmed by Wikipedia: ${name}`);
+          this.cache.set(normalizedName, true);
+          return true;
+        }
       }
 
       // Add timeout to prevent hanging
@@ -261,8 +322,8 @@ export class CelebrityFilter {
         boolean
       ];
 
-      // Immediately exclude if over 2M followers
-      if (socialInfo.isInfluencer) {
+      // Lower the follower threshold for business influencers
+      if (socialInfo.followerCount && socialInfo.followerCount > 100000) {
         this.cache.set(normalizedName, true);
         return true;
       }
