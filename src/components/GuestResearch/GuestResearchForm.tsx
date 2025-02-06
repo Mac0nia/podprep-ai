@@ -37,7 +37,7 @@ export default function GuestResearchForm({ onSubmit }: GuestResearchFormProps) 
 
   return (
     <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6 bg-white">
-      <h2 className="text-2xl font-bold text-gray-900">Find Podcast Guests</h2>
+      <h2 className="text-2xl font-bold text-gray-900">Find Podcast Guests X</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="podcastTopic" className="block text-sm font-medium text-gray-700">Podcast Topic</label>
