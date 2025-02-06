@@ -38,10 +38,13 @@ export class RealPersonVerifier {
     let webPresence: string[] = [];
 
     try {
+      console.log(`Starting verification for: ${suggestion.name}`);
+
       // Search for professional presence first
       const professionalResults = await this.searchWebPresence(
         `${suggestion.name} ${suggestion.title} ${suggestion.company} ${searchTopic}`
       );
+      console.log(`Professional presence results: ${professionalResults.length}`);
       
       if (professionalResults.length > 0) {
         webPresence = professionalResults;
@@ -54,6 +57,7 @@ export class RealPersonVerifier {
       const linkedinResults = await this.searchWebPresence(
         `site:linkedin.com/in ${suggestion.name} ${suggestion.company}`
       );
+      console.log(`LinkedIn results: ${linkedinResults.length}`);
       
       if (linkedinResults.length > 0) {
         suggestion.linkedinUrl = linkedinResults[0]; // Use the first LinkedIn result
@@ -65,6 +69,7 @@ export class RealPersonVerifier {
       const twitterResults = await this.searchWebPresence(
         `site:twitter.com ${suggestion.name}`
       );
+      console.log(`Twitter results: ${twitterResults.length}`);
       
       if (twitterResults.length > 0) {
         const twitterUrl = twitterResults[0];
@@ -77,6 +82,7 @@ export class RealPersonVerifier {
       const recentResults = await this.searchWebPresence(
         `${suggestion.name} ${searchTopic} ${new Date().getFullYear()}`
       );
+      console.log(`Recent activity results: ${recentResults.length}`);
       
       if (recentResults.length > 0) {
         verificationNotes.push('✓ Recent activity found');
@@ -92,6 +98,7 @@ export class RealPersonVerifier {
         relevanceScore = 40; // Minimum score if they have web presence
       }
 
+      console.log(`Verification completed for: ${suggestion.name}, Real: ${isReal}, Score: ${relevanceScore}`);
       return {
         isReal,
         relevanceScore,

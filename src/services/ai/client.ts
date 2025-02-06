@@ -7,49 +7,6 @@ export interface AIProvider {
   analyze: (prompt: string) => Promise<string>;
 }
 
-export class GroqProvider implements AIProvider {
-  private apiKey: string;
-  private model: string;
-  private rateLimiter: RateLimiter;
-
-  constructor() {
-    this.apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    this.model = import.meta.env.VITE_GROQ_MODEL || 'mixtral-8x7b-32768';
-    this.rateLimiter = new RateLimiter();
-  }
-
-  name = 'GROQ';
-
-  isAvailable(): boolean {
-    return !!this.apiKey;
-  }
-
-  async analyze(prompt: string): Promise<string> {
-    await this.rateLimiter.checkLimit('groq');
-    try {
-      const response = await axios.post(
-        'https://api.groq.com/v1/chat/completions',
-        {
-          model: this.model,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-          max_tokens: 2048,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      return response.data.choices[0].message.content;
-    } catch (error) {
-      console.error('GROQ API error:', error);
-      throw error;
-    }
-  }
-}
-
 export class OpenAIProvider implements AIProvider {
   private apiKey: string;
   private model: string;
@@ -99,7 +56,6 @@ export class AIClient {
 
   constructor() {
     this.providers = [
-      new GroqProvider(),
       new OpenAIProvider(),
     ].filter(provider => provider.isAvailable());
     

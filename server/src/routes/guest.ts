@@ -9,7 +9,7 @@ router.post('/search', async (req, res) => {
     // Validate request body
     const searchParams = GuestSearchSchema.parse(req.body);
 
-    // Search for guests using Groq
+    // Search for guests
     const suggestions = await searchGuests(searchParams);
 
     // Return response

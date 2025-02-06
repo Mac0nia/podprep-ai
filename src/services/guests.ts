@@ -2,7 +2,7 @@ import { GuestSearchParams, GuestSuggestion } from '../types/guest';
 import { URLValidator } from './validation/urlValidator';
 import { RealPersonVerifier } from './verification/realPersonVerifier';
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 export class APIError extends Error {
   constructor(message: string, public status?: number) {
@@ -47,19 +47,19 @@ function parseAIResponse(response: string): GuestSuggestion[] {
 }
 
 export async function searchGuests(params: GuestSearchParams): Promise<GuestSuggestion[]> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
   const googleApiKey = import.meta.env.VITE_GOOGLE_API_KEY;
   const googleSearchEngineId = import.meta.env.VITE_GOOGLE_CSE_ID;
   
   console.log('Search params:', params);
   console.log('API Keys loaded:', {
-    groqKey: apiKey?.substring(0, 10) + '...',
+    openAIKey: apiKey?.substring(0, 10) + '...',
     googleKey: googleApiKey?.substring(0, 10) + '...',
     googleCSE: googleSearchEngineId
   });
 
   if (!apiKey) {
-    throw new APIError('GROQ API key is not configured');
+    throw new APIError('OpenAI API key is not configured');
   }
 
   if (!googleApiKey || !googleSearchEngineId) {
@@ -79,14 +79,14 @@ export async function searchGuests(params: GuestSearchParams): Promise<GuestSugg
   }
 
   try {
-    const response = await fetch(GROQ_API_URL, {
+    const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: import.meta.env.VITE_GROQ_MODEL || 'mixtral-8x7b-32768',
+        model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
@@ -154,16 +154,16 @@ Please suggest diverse experts from different companies and backgrounds who can 
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('GROQ API error:', errorText);
+      console.error('OpenAI API error:', errorText);
       console.error('Response status:', response.status);
       console.error('Response headers:', Object.fromEntries(response.headers.entries()));
       throw new APIError(`Failed to fetch guest suggestions: ${response.status} ${errorText}`, response.status);
     }
 
     const data = await response.json();
-    console.log('GROQ API response:', JSON.stringify(data, null, 2));
+    console.log('OpenAI API response:', JSON.stringify(data, null, 2));
     if (!data.choices?.[0]?.message?.content) {
-      throw new APIError('Invalid response from GROQ API');
+      throw new APIError('Invalid response from OpenAI API');
     }
 
     const responseText = data.choices[0].message.content;

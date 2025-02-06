@@ -11,13 +11,13 @@ config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OUTPUT_FILE = path.join(__dirname, '../src/data/well-known-figures.json');
 
 async function generateWellKnownFigures() {
-  const apiKey = process.env.VITE_GROQ_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('GROQ API key is not configured');
+    throw new Error('OpenAI API key is not configured');
   }
 
   const categories = [
@@ -34,9 +34,9 @@ async function generateWellKnownFigures() {
     try {
       console.log(`Generating figures for category: ${category}`);
       const response = await axios.post(
-        GROQ_API_URL,
+        OPENAI_API_URL,
         {
-          model: 'mixtral-8x7b-32768',
+          model: 'gpt-3.5-turbo', // Update to the desired OpenAI model
           messages: [
             {
               role: 'system',

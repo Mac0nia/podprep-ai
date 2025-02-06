@@ -1,39 +1,39 @@
-import { useState } from 'react'
-import GuestResearchForm from '../../components/GuestResearch/GuestResearchForm'
-import GuestSuggestionCard, { GuestSuggestion } from '../../components/GuestResearch/GuestSuggestionCard'
-import { motion } from 'framer-motion'
-import { searchGuests } from '../../services/guests'
-import { GuestSearchParams } from '../../types/guest'
+import { useState } from 'react';
+import GuestResearchForm from '../../components/GuestResearch/GuestResearchForm';
+import GuestSuggestionCard, { GuestSuggestion } from '../../components/GuestResearch/GuestSuggestionCard';
+import { motion } from 'framer-motion';
+import { searchGuests } from '../../services/guests';
+import { GuestSearchParams } from '../../types/guest';
 
 export default function GuestResearch() {
-  const [suggestions, setSuggestions] = useState<GuestSuggestion[]>([])
-  const [savedGuests, setSavedGuests] = useState<GuestSuggestion[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<GuestSuggestion[]>([]);
+  const [savedGuests, setSavedGuests] = useState<GuestSuggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async (formData: GuestSearchParams) => {
-    setIsSearching(true)
-    setError(null)
+    setIsSearching(true);
+    setError(null);
     try {
-      const results = await searchGuests(formData)
-      setSuggestions(results)
+      const results = await searchGuests(formData);
+      setSuggestions(results);
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to search for guests')
-      setSuggestions([])
+      setError(error instanceof Error ? error.message : 'Failed to search for guests');
+      setSuggestions([]);
     } finally {
-      setIsSearching(false)
+      setIsSearching(false);
     }
-  }
+  };
 
   const handleSaveGuest = (guest: GuestSuggestion) => {
-    setSavedGuests(prev => {
-      const isAlreadySaved = prev.some(g => g.name === guest.name);
+    setSavedGuests((prev) => {
+      const isAlreadySaved = prev.some((g) => g.name === guest.name);
       if (isAlreadySaved) {
-        return prev.filter(g => g.name !== guest.name);
+        return prev.filter((g) => g.name !== guest.name);
       }
       return [...prev, guest];
     });
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -56,9 +56,9 @@ export default function GuestResearch() {
               <div className="mt-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Saved Guests</h3>
                 <div className="space-y-4">
-                  {savedGuests.map((guest) => (
+                  {savedGuests.map((guest, index) => (
                     <motion.div
-                      key={guest.name}
+                      key={`${guest.name}-${index}`} // Ensure uniqueness using name + index
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       className="bg-white shadow rounded-lg p-4 flex items-center justify-between"
@@ -110,12 +110,12 @@ export default function GuestResearch() {
             ) : suggestions.length > 0 ? (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900">Suggested Guests</h3>
-                {suggestions.map((guest) => (
+                {suggestions.map((guest, index) => (
                   <GuestSuggestionCard
-                    key={guest.name}
+                    key={`${guest.name}-${index}`} // Ensure uniqueness using name + index
                     guest={guest}
                     onSave={handleSaveGuest}
-                    isSaved={savedGuests.some(g => g.name === guest.name)}
+                    isSaved={savedGuests.some((g) => g.name === guest.name)}
                   />
                 ))}
               </div>
@@ -124,5 +124,5 @@ export default function GuestResearch() {
         </div>
       </div>
     </div>
-  )
+  );
 }
